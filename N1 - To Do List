@@ -1,0 +1,260 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const ToDoList());
+}
+
+class ToDoList extends StatelessWidget {
+  const ToDoList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: TelaHome(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class TelaHome extends StatefulWidget {
+  const TelaHome({super.key});
+
+  @override
+  State<TelaHome> createState() => _TelaHomeState();
+}
+
+class _TelaHomeState extends State<TelaHome> {
+  // Lista para armazenar as tarefas como Map
+  List<Map<String, dynamic>> _tarefas = [];
+
+  // Função para adicionar uma nova tarefa
+  void _adicionarTarefa(String novaTarefa, String status) {
+    setState(() {
+      if (novaTarefa.isNotEmpty) {
+        _tarefas.add({'title': novaTarefa, 'status': status});
+      }
+    });
+  }
+
+  // Função para editar uma tarefa existente
+  void _editarTarefa(int index, String novaTarefa) {
+    setState(() {
+      _tarefas[index]['title'] = novaTarefa;
+    });
+  }
+
+  // Função para remover uma tarefa
+  void _removerTarefa(int index) {
+    setState(() {
+      _tarefas.removeAt(index);
+    });
+  }
+
+  // Função para mudar o status de uma tarefa (concluída/em progresso)
+  void _mudarStatusTarefa(int index) {
+    setState(() {
+      if (_tarefas[index]['status'] == 'em progresso') {
+        _tarefas[index]['status'] = 'concluída';
+      } else {
+        _tarefas[index]['status'] = 'em progresso';
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: const Color(0xFF1693A5),
+        title: const Text(
+          'Lista de Tarefas',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+      body: Container(
+        color: const Color(0xFF7ECECA), // Fundo da tela principal
+        child: ListView.builder(
+          itemCount: _tarefas.length,
+          itemBuilder: (context, index) {
+            return Card(
+              color: _tarefas[index]['status'] == 'concluída'
+                  ? const Color(0xFFC7EDE8) // Cor das tarefas concluídas
+                  : const Color(0xFFA0DED6), // Cor das tarefas em progresso
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+              child: ListTile(
+                title: Text(
+                  _tarefas[index]['title'],
+                  style: TextStyle(
+                    color: Colors.black,
+                    decoration: _tarefas[index]['status'] == 'concluída'
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                  ),
+                ),
+                subtitle: Text(
+                  'Status: ${_tarefas[index]['status']}',
+                  style: const TextStyle(color: Colors.black),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.check),
+                      color: Colors.black,
+                      onPressed: () {
+                        _mudarStatusTarefa(index);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      color: Colors.black,
+                      onPressed: () {
+                        _exibirDialogoEdicao(context, index);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      color: Colors.black,
+                      onPressed: () {
+                        _removerTarefa(index);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _exibirDialogoAdicionar(context);
+        },
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        backgroundColor: const Color(0xFF1693A5), // Cor do FAB
+      ),
+    );
+  }
+
+  // Função para exibir o diálogo de adição de tarefa
+  void _exibirDialogoAdicionar(BuildContext context) {
+    String novaTarefa = '';
+    String status = 'em progresso';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Adicionar Tarefa'),
+          backgroundColor: const Color(0xFF45B5C4), // Fundo do diálogo
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Tarefa',
+                  labelStyle: TextStyle(color: Colors.black),
+                ),
+                onChanged: (value) {
+                  novaTarefa = value;
+                },
+                style: const TextStyle(color: Colors.black),
+              ),
+              DropdownButton<String>(
+                value: status,
+                dropdownColor: const Color(0xFF7ECECA), // Cor de fundo do dropdown
+                onChanged: (String? newValue) {
+                  setState(() {
+                    status = newValue!;
+                  });
+                },
+                items: <String>['em progresso', 'concluída']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.black),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            TextButton(
+              child: const Text(
+                'Adicionar',
+                style: TextStyle(color: Colors.black),
+              ),
+              onPressed: () {
+                _adicionarTarefa(novaTarefa, status);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Função para exibir o diálogo de edição de tarefa
+  void _exibirDialogoEdicao(BuildContext context, int index) {
+    String tarefaEditada = _tarefas[index]['title'];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar Tarefa'),
+          backgroundColor: const Color(0xFF45B5C4), // Fundo do diálogo de edição
+          content: TextField(
+            controller: TextEditingController(text: tarefaEditada),
+            decoration: const InputDecoration(
+              labelText: 'Tarefa',
+              labelStyle: TextStyle(color: Colors.black),
+            ),
+            onChanged: (value) {
+              tarefaEditada = value;
+            },
+            style: const TextStyle(color: Colors.black),
+          ),
+          actions: [
+            TextButton(
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.black),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            TextButton(
+              child: const Text(
+                'Salvar',
+                style: TextStyle(color: Colors.black),
+              ),
+              onPressed: () {
+                _editarTarefa(index, tarefaEditada);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
